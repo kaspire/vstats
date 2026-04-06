@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SPX GEX Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  :root {
+    --bg: #0d0f0f;
+    --bg2: #131616;
+    --bg3: #181c1c;
+    --border: #222828;
+    --border2: #2a3232;
+    --text: #d4dede;
+    --text2: #7a9494;
+    --text3: #4a6060;
+    --accent: #00c896;
+    --accent2: #00a07a;
+    --red: #e05555;
+    --amber: #d4902a;
+    --blue: #4a90c4;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-sans: 'IBM Plex Sans', sans-serif;
+    --radius: 6px;
+    --radius-lg: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg2);
+  }
+  .header-left { display: flex; align-items: baseline; gap: 16px; }
+  .logo { font-family: var(--font-mono); font-size: 16px; font-weight: 500; color: var(--accent); letter-spacing: .04em; }
+  .logo-sub { font-size: 11px; color: var(--text3); letter-spacing: .08em; text-transform: uppercase; }
+  .header-right { display: flex; gap: 10px; align-items: center; }
+  .entry-count { font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
+
+  /* Nav */
+  .nav {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg2);
+    padding: 0 32px;
+  }
+  .nav-tab {
+    padding: 12px 20px;
+    font-size: 12px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    border-bottom: 2px solid transparent;
+    transition: all .15s;
+  }
+  .nav-tab:hover { color: var(--text2); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  /* Layout */
+  .main { padding: 28px 32px; max-width: 1400px; margin: 0 auto; }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* Cards */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 24px;
+    margin-bottom: 16px;
+  }
+  .card-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Grid */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  .g4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; }
+
+  /* Form */
+  .form-group { margin-bottom: 0; }
+  .form-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--text3);
+    margin-bottom: 5px;
+    font-family: var(--font-mono);
+    letter-spacing: .04em;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 8px 11px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    transition: border-color .15s;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    outline: none;
+    border-color: var(--accent2);
+  }
+  .form-group input[readonly] { opacity: .5; cursor: default; }
+  select option { background: var(--bg3); }
+
+  /* Buttons */
+  .btn {
+    padding: 9px 20px;
+    font-size: 12px;
+    font-family: var(--font-mono);
+    letter-spacing: .04em;
+    border-radius: var(--radius);
+    cursor: pointer;
+    border: 1px solid var(--border2);
+    background: transparent;
+    color: var(--text2);
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--text3); color: var(--text); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: #000; font-weight: 500; }
+  .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: #000; }
+  .btn-sm { padding: 5px 10px; font-size: 11px; }
+  .btn-danger { color: var(--red); border-color: #3a2020; }
+  .btn-danger:hover { background: #3a2020; }
+
+  /* Badges */
+  .badge {
+    display: inline-block;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: var(--font-mono);
+    font-weight: 500;
+    letter-spacing: .04em;
+  }
+  .b-pos { background: #0a2e20; color: var(--accent); border: 1px solid #0f4030; }
+  .b-neg { background: #2e0a0a; color: var(--red); border: 1px solid #4a1010; }
+  .b-warn { background: #2a1e08; color: var(--amber); border: 1px solid #3a2c10; }
+  .b-neutral { background: var(--bg3); color: var(--text3); border: 1px solid var(--border); }
+  .b-blue { background: #0a1e2e; color: var(--blue); border: 1px solid #102840; }
+
+  /* Metrics */
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .metric {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+  }
+  .metric-label { font-size: 10px; color: var(--text3); font-family: var(--font-mono); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6px; }
+  .metric-value { font-size: 22px; font-weight: 500; font-family: var(--font-mono); color: var(--text); }
+  .metric-sub { font-size: 10px; color: var(--text3); margin-top: 3px; font-family: var(--font-mono); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }
+  thead th {
+    text-align: left;
+    padding: 8px 10px;
+    font-size: 10px;
+    color: var(--text3);
+    letter-spacing: .07em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  tbody td {
+    padding: 9px 10px;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+    vertical-align: middle;
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:hover td { background: var(--bg3); }
+
+  /* Hit dots */
+  .dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 5px; vertical-align: middle; }
+  .dot-hit { background: var(--accent); }
+  .dot-miss { background: var(--red); }
+  .dot-near { background: var(--amber); }
+
+  /* Progress bar */
+  .pbar { height: 3px; background: var(--border); border-radius: 2px; margin-top: 6px; }
+  .pbar-fill { height: 3px; border-radius: 2px; }
+
+  /* Notice */
+  .notice {
+    background: #0a1e16;
+    border: 1px solid #0f3020;
+    border-radius: var(--radius);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--accent2);
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+  }
+
+  /* Empty */
+  .empty { text-align: center; padding: 60px 20px; color: var(--text3); font-family: var(--font-mono); font-size: 13px; }
+
+  /* Chart */
+  .chart-wrap { position: relative; width: 100%; height: 220px; }
+
+  /* Toolbar */
+  .toolbar { display: flex; gap: 10px; align-items: center; margin-bottom: 16px; flex-wrap: wrap; justify-content: space-between; }
+  .toolbar-left { display: flex; gap: 10px; }
+  .toolbar-right { display: flex; gap: 10px; }
+
+  /* Level line in analysis */
+  .level-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .level-row:last-child { border-bottom: none; }
+
+  /* Regime split */
+  .regime-split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .regime-box {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+  }
+  .regime-box.pos { border-color: #0f4030; background: #060e0a; }
+  .regime-box.neg { border-color: #4a1010; background: #0e0606; }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+  .section-gap { margin-top: 20px; }
+  .notes-row td { color: var(--text3) !important; font-style: italic; font-size: 11px; }
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; padding-top: 8px; }
+
+  /* Edit Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 1000;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 40px 20px;
+    overflow-y: auto;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-lg);
+    width: 100%;
+    max-width: 860px;
+    padding: 24px 28px;
+    position: relative;
+  }
+  .modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .modal-title { font-family: var(--font-mono); font-size: 13px; color: var(--accent); letter-spacing: .06em; }
+  .modal-date { font-family: var(--font-mono); font-size: 11px; color: var(--text3); }
+  .modal-close { background: transparent; border: none; color: var(--text3); font-size: 20px; cursor: pointer; padding: 0 4px; line-height: 1; }
+  .modal-close:hover { color: var(--text); }
+  .modal-section { margin-bottom: 18px; }
+  .modal-section-title {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--text3);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  .btn-edit { color: var(--accent2); border-color: #0f3020; }
+  .btn-edit:hover { background: #0a2018; }
+
+  @media (max-width: 768px) {
+    .header { padding: 14px 16px; }
+    .nav { padding: 0 16px; }
+    .main { padding: 16px; }
+    .g2, .g3, .g4 { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">SPX // GEX</div>
+    <div class="logo-sub">Statistical Journal</div>
+  </div>
+  <div class="header-right">
+    <span class="entry-count" id="entryCount">0 entries</span>
+    <button class="btn btn-sm" onclick="exportCSV()">Export CSV</button>
+    <label class="btn btn-sm" style="cursor:pointer">Import CSV<input type="file" accept=".csv" id="importFile" style="display:none" onchange="importCSV(event)"></label>
+  </div>
+</div>
+
+<nav class="nav">
+  <button class="nav-tab active" onclick="switchTab('entry')">New Entry</button>
+  <button class="nav-tab" onclick="switchTab('journal')">Journal</button>
+  <button class="nav-tab" onclick="switchTab('analytics')">Analytics</button>
+</nav>
+
+<div class="main">
+
+  <!-- NEW ENTRY -->
+  <div id="tab-entry" class="section active">
+    <div class="notice">Fields marked * are required. V-Ratio auto-calculates from VIX / VVIX. Distances calculate on save.</div>
+
+    <div class="card">
+      <div class="card-title">Session</div>
+      <div class="g3">
+        <div class="form-group"><label>Date *</label><input type="date" id="f-date"></div>
+        <div class="form-group"><label>Session type</label>
+          <select id="f-daytype">
+            <option value="regular">Regular</option>
+            <option value="opex_week">OPEX week</option>
+            <option value="monthly_opex">Monthly OPEX</option>
+            <option value="0dte_friday">0DTE Friday</option>
+            <option value="fed_day">Fed Day</option>
+            <option value="cpi_day">CPI Day</option>
+            <option value="triple_witching">Triple Witching</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Signal</label>
+          <select id="f-signal">
+            <option value="NEUTRAL">Neutral</option>
+            <option value="BULLISH">Bullish</option>
+            <option value="BEARISH">Bearish</option>
+            <option value="EXTREME_BULL">Extreme Bull</option>
+            <option value="EXTREME_BEAR">Extreme Bear</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">GEX Brief — Key Levels</div>
+      <div class="g4">
+        <div class="form-group"><label>GEX Regime *</label>
+          <select id="f-regime">
+            <option value="POSITIVE">Positive — Low Vol</option>
+            <option value="NEGATIVE">Negative — Volatile</option>
+            <option value="NEUTRAL">Neutral / Transition</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Gamma Flip *</label><input type="number" id="f-flip" placeholder="e.g. 6689"></div>
+        <div class="form-group"><label>Call Wall *</label><input type="number" id="f-callwall" placeholder="e.g. 6700"></div>
+        <div class="form-group"><label>Put Wall *</label><input type="number" id="f-putwall" placeholder="e.g. 6500"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Top Strike Data — Barchart</div>
+      <div class="g4">
+        <div class="form-group"><label>Top Strike</label><input type="number" id="f-topstrike" placeholder="e.g. 6605"></div>
+        <div class="form-group"><label>Net GEX (B)</label><input type="number" id="f-netgex" placeholder="e.g. 1.373" step="0.001"></div>
+        <div class="form-group"><label>Aggregate GEX (B)</label><input type="number" id="f-aggex" placeholder="e.g. -10.98" step="0.001"></div>
+        <div></div>
+        <div class="form-group"><label>Call OI (K)</label><input type="number" id="f-calloi" placeholder="e.g. 10"></div>
+        <div class="form-group"><label>Put OI (K)</label><input type="number" id="f-putoi" placeholder="e.g. 1"></div>
+        <div class="form-group"><label>Call Volume (K)</label><input type="number" id="f-callvol" placeholder="e.g. 4"></div>
+        <div class="form-group"><label>Put Volume (K)</label><input type="number" id="f-putvol" placeholder="e.g. 297"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Volatility</div>
+      <div class="g4">
+        <div class="form-group"><label>VIX *</label><input type="number" id="f-vix" placeholder="e.g. 23.9" step="0.1"></div>
+        <div class="form-group"><label>VVIX *</label><input type="number" id="f-vvix" placeholder="e.g. 115.3" step="0.1"></div>
+        <div class="form-group"><label>V-Ratio (auto)</label><input type="number" id="f-vratio" placeholder="auto" readonly></div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">SPX Price</div>
+      <div class="g4">
+        <div class="form-group"><label>Open *</label><input type="number" id="f-open" placeholder="e.g. 6650"></div>
+        <div class="form-group"><label>High</label><input type="number" id="f-high" placeholder="e.g. 6710"></div>
+        <div class="form-group"><label>Low</label><input type="number" id="f-low" placeholder="e.g. 6620"></div>
+        <div class="form-group"><label>Close *</label><input type="number" id="f-close" placeholder="e.g. 6680"></div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="form-group"><label>Notes</label><input type="text" id="f-notes" placeholder="e.g. Bounced off put wall, closed above flip..."></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" onclick="clearForm()">Clear</button>
+      <button class="btn btn-primary" onclick="saveEntry()">Save Entry →</button>
+    </div>
+  </div>
+
+  <!-- JOURNAL -->
+  <div id="tab-journal" class="section">
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <select id="filterRegime" class="btn btn-sm" onchange="renderJournal()" style="padding:5px 10px;font-size:11px">
+          <option value="">All regimes</option>
+          <option value="POSITIVE">Positive GEX</option>
+          <option value="NEGATIVE">Negative GEX</option>
+          <option value="NEUTRAL">Neutral</option>
+        </select>
+        <select id="filterType" class="btn btn-sm" onchange="renderJournal()" style="padding:5px 10px;font-size:11px">
+          <option value="">All session types</option>
+          <option value="regular">Regular</option>
+          <option value="opex_week">OPEX week</option>
+          <option value="monthly_opex">Monthly OPEX</option>
+          <option value="0dte_friday">0DTE Friday</option>
+          <option value="fed_day">Fed Day</option>
+          <option value="cpi_day">CPI Day</option>
+          <option value="triple_witching">Triple Witching</option>
+        </select>
+      </div>
+      <div class="toolbar-right">
+        <button class="btn btn-sm" onclick="exportCSV()">Export CSV</button>
+      </div>
+    </div>
+    <div id="journalContent"><div class="empty">No entries yet. Add your first entry.</div></div>
+  </div>
+
+  <!-- ANALYTICS -->
+  <div id="tab-analytics" class="section">
+    <div id="analyticsContent"><div class="empty">Add at least 3 entries to see analytics.</div></div>
+  </div>
+
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="editModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title">Edit Entry</div>
+        <div class="modal-date" id="editModalDate"></div>
+      </div>
+      <button class="modal-close" onclick="closeEdit()">×</button>
+    </div>
+
+    <input type="hidden" id="e-id">
+
+    <div class="modal-section">
+      <div class="modal-section-title">Session</div>
+      <div class="g3">
+        <div class="form-group"><label>Date *</label><input type="date" id="e-date"></div>
+        <div class="form-group"><label>Session type</label>
+          <select id="e-daytype">
+            <option value="regular">Regular</option>
+            <option value="opex_week">OPEX week</option>
+            <option value="monthly_opex">Monthly OPEX</option>
+            <option value="0dte_friday">0DTE Friday</option>
+            <option value="fed_day">Fed Day</option>
+            <option value="cpi_day">CPI Day</option>
+            <option value="triple_witching">Triple Witching</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Signal</label>
+          <select id="e-signal">
+            <option value="NEUTRAL">Neutral</option>
+            <option value="BULLISH">Bullish</option>
+            <option value="BEARISH">Bearish</option>
+            <option value="EXTREME_BULL">Extreme Bull</option>
+            <option value="EXTREME_BEAR">Extreme Bear</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">GEX Brief — Key Levels</div>
+      <div class="g4">
+        <div class="form-group"><label>GEX Regime *</label>
+          <select id="e-regime">
+            <option value="POSITIVE">Positive — Low Vol</option>
+            <option value="NEGATIVE">Negative — Volatile</option>
+            <option value="NEUTRAL">Neutral / Transition</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Gamma Flip *</label><input type="number" id="e-flip"></div>
+        <div class="form-group"><label>Call Wall *</label><input type="number" id="e-callwall"></div>
+        <div class="form-group"><label>Put Wall *</label><input type="number" id="e-putwall"></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Top Strike Data — Barchart</div>
+      <div class="g4">
+        <div class="form-group"><label>Top Strike</label><input type="number" id="e-topstrike"></div>
+        <div class="form-group"><label>Net GEX (B)</label><input type="number" id="e-netgex" step="0.001"></div>
+        <div class="form-group"><label>Aggregate GEX (B)</label><input type="number" id="e-aggex" step="0.001"></div>
+        <div></div>
+        <div class="form-group"><label>Call OI (K)</label><input type="number" id="e-calloi"></div>
+        <div class="form-group"><label>Put OI (K)</label><input type="number" id="e-putoi"></div>
+        <div class="form-group"><label>Call Volume (K)</label><input type="number" id="e-callvol"></div>
+        <div class="form-group"><label>Put Volume (K)</label><input type="number" id="e-putvol"></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">Volatility</div>
+      <div class="g4">
+        <div class="form-group"><label>VIX *</label><input type="number" id="e-vix" step="0.1"></div>
+        <div class="form-group"><label>VVIX *</label><input type="number" id="e-vvix" step="0.1"></div>
+        <div class="form-group"><label>V-Ratio (auto)</label><input type="number" id="e-vratio" readonly></div>
+        <div></div>
+      </div>
+    </div>
+
+    <div class="modal-section">
+      <div class="modal-section-title">SPX Price</div>
+      <div class="g4">
+        <div class="form-group"><label>Open *</label><input type="number" id="e-open"></div>
+        <div class="form-group"><label>High</label><input type="number" id="e-high"></div>
+        <div class="form-group"><label>Low</label><input type="number" id="e-low"></div>
+        <div class="form-group"><label>Close *</label><input type="number" id="e-close"></div>
+      </div>
+      <div style="margin-top:12px">
+        <div class="form-group"><label>Notes</label><input type="text" id="e-notes"></div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn" onclick="closeEdit()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEdit()">Save Changes →</button>
+    </div>
+  </div>
+</div>
+let entries = [];
+try { const s = localStorage.getItem('spx_gex_v2'); if(s) entries = JSON.parse(s); } catch(e){}
+
+function persist() {
+  try { localStorage.setItem('spx_gex_v2', JSON.stringify(entries)); } catch(e){}
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.nav-tab').forEach((b,i) => b.classList.toggle('active', ['entry','journal','analytics'][i]===t));
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='journal') renderJournal();
+  if(t==='analytics') renderAnalytics();
+}
+
+// Set today's date
+const todayStr = new Date().toISOString().split('T')[0];
+document.getElementById('f-date').value = todayStr;
+
+// Auto V-Ratio
+['f-vix','f-vvix'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  const vix = parseFloat(document.getElementById('f-vix').value);
+  const vvix = parseFloat(document.getElementById('f-vvix').value);
+  document.getElementById('f-vratio').value = (vix && vvix && vix > 0) ? (vvix/vix).toFixed(2) : '';
+}));
+
+function g(id) { return document.getElementById(id).value; }
+function gn(id) { const v = parseFloat(g(id)); return isNaN(v) ? null : v; }
+
+function clearForm() {
+  ['f-flip','f-callwall','f-putwall','f-topstrike','f-netgex','f-aggex','f-calloi','f-putoi',
+   'f-callvol','f-putvol','f-vix','f-vvix','f-vratio','f-open','f-high','f-low','f-close','f-notes'].forEach(id => document.getElementById(id).value = '');
+  ['f-regime','f-daytype','f-signal'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  document.getElementById('f-date').value = todayStr;
+}
+
+function saveEntry() {
+  const date=g('f-date'), flip=gn('f-flip'), callwall=gn('f-callwall'), putwall=gn('f-putwall');
+  const open=gn('f-open'), close=gn('f-close'), vix=gn('f-vix'), vvix=gn('f-vvix');
+  if(!date||!flip||!callwall||!putwall||!open||!close||!vix||!vvix) { alert('Please fill all required fields (*)'); return; }
+  const high=gn('f-high'), low=gn('f-low');
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dow = dayNames[new Date(date+'T12:00:00').getDay()];
+  const change = parseFloat((close-open).toFixed(2));
+  const changePct = parseFloat(((change/open)*100).toFixed(2));
+  const vratio = parseFloat((vvix/vix).toFixed(2));
+  const e = {
+    id: Date.now(),
+    date, dow,
+    regime: g('f-regime'),
+    daytype: g('f-daytype'),
+    signal: g('f-signal'),
+    flip, callwall, putwall,
+    topstrike: gn('f-topstrike'),
+    netgex: gn('f-netgex'),
+    aggex: gn('f-aggex'),
+    calloi: gn('f-calloi'), putoi: gn('f-putoi'),
+    callvol: gn('f-callvol'), putvol: gn('f-putvol'),
+    vix, vvix, vratio,
+    open, high, low, close, change, changePct,
+    hitCallWall: !!(high && high >= callwall),
+    hitPutWall: !!(low && low <= putwall),
+    crossedFlip: (open<flip&&close>flip)||(open>flip&&close<flip),
+    aboveFlip: close > flip,
+    distCW: parseFloat((callwall-close).toFixed(1)),
+    distPW: parseFloat((close-putwall).toFixed(1)),
+    distFlip: parseFloat((close-flip).toFixed(1)),
+    range: (high && low) ? parseFloat((high-low).toFixed(1)) : null,
+    notes: g('f-notes')
+  };
+  entries.unshift(e);
+  persist();
+  updateCount();
+  alert('Saved: '+date);
+  clearForm();
+}
+
+function updateCount() {
+  document.getElementById('entryCount').textContent = entries.length + (entries.length===1?' entry':' entries');
+}
+
+// ---- BADGES ----
+function rBadge(r) {
+  if(r==='POSITIVE') return '<span class="badge b-pos">+GEX</span>';
+  if(r==='NEGATIVE') return '<span class="badge b-neg">−GEX</span>';
+  return '<span class="badge b-neutral">≈GEX</span>';
+}
+function cBadge(pct) {
+  const cls = pct>0?'b-pos':pct<0?'b-neg':'b-neutral';
+  return `<span class="badge ${cls}">${pct>0?'+':''}${pct}%</span>`;
+}
+function sBadge(s) {
+  if(s==='BULLISH'||s==='EXTREME_BULL') return `<span class="badge b-pos">${s}</span>`;
+  if(s==='BEARISH'||s==='EXTREME_BEAR') return `<span class="badge b-neg">${s}</span>`;
+  return `<span class="badge b-neutral">${s}</span>`;
+}
+function dtBadge(t) {
+  if(t==='regular') return '';
+  const map={opex_week:'b-warn',monthly_opex:'b-warn',triple_witching:'b-warn','0dte_friday':'b-blue',fed_day:'b-blue',cpi_day:'b-blue'};
+  return `<span class="badge ${map[t]||'b-neutral'}" style="font-size:9px">${t.replace(/_/g,' ')}</span>`;
+}
+
+// ---- JOURNAL ----
+function renderJournal() {
+  const el = document.getElementById('journalContent');
+  const rf = document.getElementById('filterRegime').value;
+  const tf = document.getElementById('filterType').value;
+  let data = entries.filter(e => (!rf||e.regime===rf) && (!tf||e.daytype===tf));
+  if(!data.length) { el.innerHTML='<div class="empty">No entries match the current filter.</div>'; return; }
+
+  let html = `<div class="table-wrap"><table>
+    <thead><tr>
+      <th>Date</th><th>Regime</th><th>Flip</th><th>Call Wall</th><th>Put Wall</th>
+      <th>Open</th><th>High</th><th>Low</th><th>Close</th><th>Change</th>
+      <th>VIX</th><th>VVIX</th><th>V-Ratio</th>
+      <th>Flip ×</th><th>Above Flip</th><th>Hit CW</th><th>Hit PW</th>
+      <th>→CW</th><th>→PW</th><th>→Flip</th>
+      <th>Range</th><th>Agg GEX</th><th>Net GEX</th>
+      <th>Call OI</th><th>Put OI</th><th>Signal</th><th>Type</th><th></th>
+    </tr></thead><tbody>`;
+
+  data.forEach(e => {
+    html += `<tr>
+      <td><b>${e.date}</b> <span style="color:var(--text3)">${e.dow}</span></td>
+      <td>${rBadge(e.regime)}</td>
+      <td style="font-family:var(--font-mono)">${e.flip}</td>
+      <td style="font-family:var(--font-mono);color:var(--accent)">${e.callwall}</td>
+      <td style="font-family:var(--font-mono);color:var(--red)">${e.putwall}</td>
+      <td style="font-family:var(--font-mono)">${e.open}</td>
+      <td style="font-family:var(--font-mono);color:var(--text2)">${e.high??'—'}</td>
+      <td style="font-family:var(--font-mono);color:var(--text2)">${e.low??'—'}</td>
+      <td style="font-family:var(--font-mono)"><b>${e.close}</b></td>
+      <td>${cBadge(e.changePct)}</td>
+      <td style="font-family:var(--font-mono)">${e.vix}</td>
+      <td style="font-family:var(--font-mono)">${e.vvix}</td>
+      <td style="font-family:var(--font-mono);color:${e.vratio>5?'var(--red)':e.vratio>4?'var(--amber)':'var(--accent)'}">${e.vratio}</td>
+      <td><span class="dot ${e.crossedFlip?'dot-hit':'dot-miss'}"></span>${e.crossedFlip?'Yes':'No'}</td>
+      <td><span class="dot ${e.aboveFlip?'dot-hit':'dot-miss'}"></span>${e.aboveFlip?'Yes':'No'}</td>
+      <td><span class="dot ${e.hitCallWall?'dot-hit':'dot-miss'}"></span>${e.hitCallWall?'<b>HIT</b>':'No'}</td>
+      <td><span class="dot ${e.hitPutWall?'dot-hit':'dot-miss'}"></span>${e.hitPutWall?'<b>HIT</b>':'No'}</td>
+      <td style="font-family:var(--font-mono);color:${e.distCW<30?'var(--amber)':'var(--text2)'}">${e.distCW}p</td>
+      <td style="font-family:var(--font-mono);color:${e.distPW<30?'var(--amber)':'var(--text2)'}">${e.distPW}p</td>
+      <td style="font-family:var(--font-mono);color:${e.distFlip>0?'var(--accent)':'var(--red)'}">${e.distFlip>0?'+':''}${e.distFlip}</td>
+      <td style="font-family:var(--font-mono)">${e.range??'—'}</td>
+      <td style="font-family:var(--font-mono);color:${e.aggex<0?'var(--red)':'var(--accent)'}">${e.aggex!=null?(e.aggex>0?'+':'')+e.aggex+'B':'—'}</td>
+      <td style="font-family:var(--font-mono)">${e.netgex!=null?e.netgex+'B':'—'}</td>
+      <td style="font-family:var(--font-mono)">${e.calloi!=null?e.calloi+'K':'—'}</td>
+      <td style="font-family:var(--font-mono)">${e.putoi!=null?e.putoi+'K':'—'}</td>
+      <td>${sBadge(e.signal)}</td>
+      <td>${dtBadge(e.daytype)}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-edit" onclick="openEdit(${e.id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="delEntry(${e.id})">×</button>
+      </td>
+    </tr>`;
+    if(e.notes) html += `<tr class="notes-row"><td colspan="28" style="padding:4px 10px 8px;color:var(--text3);font-style:italic;font-size:11px;font-family:var(--font-sans)">↳ ${e.notes}</td></tr>`;
+  });
+  html += '</tbody></table></div>';
+  el.innerHTML = html;
+}
+
+function delEntry(id) {
+  if(!confirm('Delete this entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  persist(); updateCount(); renderJournal();
+}
+
+// ---- ANALYTICS ----
+let chartInstances = {};
+function destroyChart(id) { if(chartInstances[id]) { chartInstances[id].destroy(); delete chartInstances[id]; } }
+
+function renderAnalytics() {
+  const el = document.getElementById('analyticsContent');
+  if(entries.length < 2) { el.innerHTML='<div class="empty">Add at least 2 entries to see analytics.</div>'; return; }
+
+  const n = entries.length;
+  const pos = entries.filter(e=>e.regime==='POSITIVE');
+  const neg = entries.filter(e=>e.regime==='NEGATIVE');
+  const hitCW = entries.filter(e=>e.hitCallWall).length;
+  const hitPW = entries.filter(e=>e.hitPutWall).length;
+  const crossF = entries.filter(e=>e.crossedFlip).length;
+  const upDays = entries.filter(e=>e.changePct>0).length;
+  const avgVR = (entries.filter(e=>e.vratio).reduce((s,e)=>s+e.vratio,0)/entries.filter(e=>e.vratio).length).toFixed(2);
+  const avgVix = (entries.reduce((s,e)=>s+e.vix,0)/n).toFixed(1);
+  const avgChg = (entries.reduce((s,e)=>s+e.changePct,0)/n).toFixed(2);
+
+  const missedCW = entries.filter(e=>!e.hitCallWall&&e.distCW!=null);
+  const missedPW = entries.filter(e=>!e.hitPutWall&&e.distPW!=null);
+  const avgMissCW = missedCW.length ? (missedCW.reduce((s,e)=>s+e.distCW,0)/missedCW.length).toFixed(0) : '—';
+  const avgMissPW = missedPW.length ? (missedPW.reduce((s,e)=>s+e.distPW,0)/missedPW.length).toFixed(0) : '—';
+
+  const posRange = pos.filter(e=>e.range).length ? (pos.filter(e=>e.range).reduce((s,e)=>s+e.range,0)/pos.filter(e=>e.range).length).toFixed(0) : '—';
+  const negRange = neg.filter(e=>e.range).length ? (neg.filter(e=>e.range).reduce((s,e)=>s+e.range,0)/neg.filter(e=>e.range).length).toFixed(0) : '—';
+  const posWin = pos.length ? ((pos.filter(e=>e.changePct>0).length/pos.length)*100).toFixed(0) : '—';
+  const negWin = neg.length ? ((neg.filter(e=>e.changePct>0).length/neg.length)*100).toFixed(0) : '—';
+
+  const best = entries.reduce((a,b)=>b.changePct>a.changePct?b:a);
+  const worst = entries.reduce((a,b)=>b.changePct<a.changePct?b:a);
+  const bigRange = entries.filter(e=>e.range).reduce((a,b)=>b.range>a.range?b:a,{range:0});
+  const highVR = entries.filter(e=>e.vratio).reduce((a,b)=>b.vratio>a.vratio?b:a,{vratio:0});
+
+  // DOW stats
+  const dowNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dowStats = {};
+  dowNames.forEach(d=>{ dowStats[d]={count:0,up:0,hitCW:0,hitPW:0,crossF:0,ranges:[]}; });
+  entries.forEach(e=>{ if(!dowStats[e.dow]) return;
+    dowStats[e.dow].count++;
+    if(e.changePct>0) dowStats[e.dow].up++;
+    if(e.hitCallWall) dowStats[e.dow].hitCW++;
+    if(e.hitPutWall) dowStats[e.dow].hitPW++;
+    if(e.crossedFlip) dowStats[e.dow].crossF++;
+    if(e.range) dowStats[e.dow].ranges.push(e.range);
+  });
+
+  el.innerHTML = `
+  <div class="metric-grid">
+    <div class="metric"><div class="metric-label">Total sessions</div><div class="metric-value">${n}</div></div>
+    <div class="metric"><div class="metric-label">+GEX days</div><div class="metric-value">${pos.length}</div><div class="metric-sub">${((pos.length/n)*100).toFixed(0)}% of sessions</div></div>
+    <div class="metric"><div class="metric-label">−GEX days</div><div class="metric-value">${neg.length}</div><div class="metric-sub">${((neg.length/n)*100).toFixed(0)}% of sessions</div></div>
+    <div class="metric"><div class="metric-label">Up days</div><div class="metric-value">${upDays}</div><div class="metric-sub">${((upDays/n)*100).toFixed(0)}% win rate</div></div>
+    <div class="metric"><div class="metric-label">Avg change</div><div class="metric-value" style="color:${avgChg>0?'var(--accent)':'var(--red)'}">${avgChg>0?'+':''}${avgChg}%</div></div>
+    <div class="metric"><div class="metric-label">Avg VIX</div><div class="metric-value">${avgVix}</div></div>
+    <div class="metric"><div class="metric-label">Avg V-Ratio</div><div class="metric-value">${avgVR}</div></div>
+    <div class="metric"><div class="metric-label">Flip crosses</div><div class="metric-value">${crossF}</div><div class="metric-sub">${((crossF/n)*100).toFixed(0)}% of days</div></div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Level hit rates</div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="color:var(--text2)">Call Wall hit</span>
+          <span style="font-family:var(--font-mono)">${hitCW}/${n} <span style="color:var(--accent)">${((hitCW/n)*100).toFixed(0)}%</span></span>
+        </div>
+        <div class="pbar"><div class="pbar-fill" style="width:${(hitCW/n)*100}%;background:var(--accent)"></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)">avg dist when missed: ${avgMissCW} pts</div>
+      </div>
+      <div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+          <span style="color:var(--text2)">Put Wall hit</span>
+          <span style="font-family:var(--font-mono)">${hitPW}/${n} <span style="color:var(--red)">${((hitPW/n)*100).toFixed(0)}%</span></span>
+        </div>
+        <div class="pbar"><div class="pbar-fill" style="width:${(hitPW/n)*100}%;background:var(--red)"></div></div>
+        <div style="font-size:10px;color:var(--text3);margin-top:4px;font-family:var(--font-mono)">avg dist when missed: ${avgMissPW} pts</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Regime comparison</div>
+      <div class="regime-split">
+        <div class="regime-box pos">
+          <div style="font-size:10px;color:var(--accent);font-family:var(--font-mono);margin-bottom:8px">POSITIVE GEX</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Avg range: <b style="color:var(--text)">${posRange} pts</b></div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Win rate: <b style="color:var(--text)">${posWin}%</b></div>
+          <div style="font-size:11px;color:var(--text2)">Sessions: <b style="color:var(--text)">${pos.length}</b></div>
+        </div>
+        <div class="regime-box neg">
+          <div style="font-size:10px;color:var(--red);font-family:var(--font-mono);margin-bottom:8px">NEGATIVE GEX</div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Avg range: <b style="color:var(--text)">${negRange} pts</b></div>
+          <div style="font-size:11px;color:var(--text2);margin-bottom:4px">Win rate: <b style="color:var(--text)">${negWin}%</b></div>
+          <div style="font-size:11px;color:var(--text2)">Sessions: <b style="color:var(--text)">${neg.length}</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">Notable sessions</div>
+      <div class="level-row">
+        <span style="color:var(--text3);font-size:11px">Best day</span>
+        <span style="font-family:var(--font-mono);font-size:12px">${best.date} <span style="color:var(--accent)">+${best.changePct}%</span> ${rBadge(best.regime)}</span>
+      </div>
+      <div class="level-row">
+        <span style="color:var(--text3);font-size:11px">Worst day</span>
+        <span style="font-family:var(--font-mono);font-size:12px">${worst.date} <span style="color:var(--red)">${worst.changePct}%</span> ${rBadge(worst.regime)}</span>
+      </div>
+      <div class="level-row">
+        <span style="color:var(--text3);font-size:11px">Biggest range</span>
+        <span style="font-family:var(--font-mono);font-size:12px">${bigRange.date||'—'} <span style="color:var(--amber)">${bigRange.range||'—'} pts</span></span>
+      </div>
+      <div class="level-row">
+        <span style="color:var(--text3);font-size:11px">Highest V-Ratio</span>
+        <span style="font-family:var(--font-mono);font-size:12px">${highVR.date||'—'} <span style="color:var(--red)">${highVR.vratio||'—'}</span></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Day-of-week breakdown</div>
+      <table>
+        <thead><tr><th>Day</th><th>Sessions</th><th>Win%</th><th>CW hit</th><th>PW hit</th><th>Flip ×</th><th>Avg range</th></tr></thead>
+        <tbody>
+        ${['Mon','Tue','Wed','Thu','Fri'].map(d=>{
+          const s=dowStats[d]; if(!s||!s.count) return `<tr><td style="color:var(--text3)">${d}</td><td colspan="6" style="color:var(--text3)">—</td></tr>`;
+          const avgR = s.ranges.length ? (s.ranges.reduce((a,b)=>a+b,0)/s.ranges.length).toFixed(0) : '—';
+          return `<tr>
+            <td style="font-weight:500">${d}</td>
+            <td style="font-family:var(--font-mono)">${s.count}</td>
+            <td style="font-family:var(--font-mono);color:var(--accent)">${((s.up/s.count)*100).toFixed(0)}%</td>
+            <td style="font-family:var(--font-mono)">${s.hitCW}/${s.count}</td>
+            <td style="font-family:var(--font-mono)">${s.hitPW}/${s.count}</td>
+            <td style="font-family:var(--font-mono)">${s.crossF}/${s.count}</td>
+            <td style="font-family:var(--font-mono)">${avgR} pts</td>
+          </tr>`;
+        }).join('')}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  ${entries.length>=3?`
+  <div class="card">
+    <div class="card-title">SPX close vs key levels — last ${Math.min(20,entries.length)} sessions</div>
+    <div class="chart-wrap"><canvas id="chartLevels"></canvas></div>
+  </div>
+  <div class="g2">
+    <div class="card">
+      <div class="card-title">V-Ratio by session</div>
+      <div class="chart-wrap"><canvas id="chartVR"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Aggregate GEX trend</div>
+      <div class="chart-wrap"><canvas id="chartAggex"></canvas></div>
+    </div>
+  </div>
+  `:''}`;
+
+  if(entries.length>=3) setTimeout(buildCharts, 80);
+}
+
+function buildCharts() {
+  const last = [...entries].slice(0, Math.min(20, entries.length)).reverse();
+  const labels = last.map(e=>e.date.slice(5)+' '+e.dow);
+  const tgrid = { color: 'rgba(255,255,255,0.04)' };
+  const tcolor = '#4a6060';
+  const baseOpts = {
+    responsive:true, maintainAspectRatio:false,
+    plugins:{ legend:{ display:false } },
+    scales:{ x:{ ticks:{ color:tcolor, font:{size:10}, maxRotation:45 }, grid:tgrid },
+             y:{ ticks:{ color:tcolor, font:{size:10} }, grid:tgrid } }
+  };
+
+  destroyChart('levels');
+  destroyChart('vr');
+  destroyChart('aggex');
+
+  const c1 = document.getElementById('chartLevels');
+  if(c1) {
+    chartInstances['levels'] = new Chart(c1, {
+      type:'line',
+      data:{ labels, datasets:[
+        { label:'Close', data:last.map(e=>e.close), borderColor:'#d4dede', borderWidth:2, pointRadius:3, pointBackgroundColor:'#d4dede', fill:false, tension:.3 },
+        { label:'Call Wall', data:last.map(e=>e.callwall), borderColor:'#00c896', borderWidth:1, borderDash:[5,5], pointRadius:0, fill:false },
+        { label:'Put Wall', data:last.map(e=>e.putwall), borderColor:'#e05555', borderWidth:1, borderDash:[5,5], pointRadius:0, fill:false },
+        { label:'Flip', data:last.map(e=>e.flip), borderColor:'#d4902a', borderWidth:1, borderDash:[3,3], pointRadius:0, fill:false }
+      ]},
+      options:{...baseOpts, plugins:{legend:{display:true, labels:{color:'#7a9494',font:{size:11},boxWidth:12,padding:16}}}}
+    });
+  }
+
+  const c2 = document.getElementById('chartVR');
+  if(c2) {
+    const vrs = last.map(e=>e.vratio);
+    chartInstances['vr'] = new Chart(c2, {
+      type:'bar',
+      data:{ labels, datasets:[{ label:'V-Ratio', data:vrs, backgroundColor:vrs.map(v=>v>5?'#e05555':v>4?'#d4902a':'#00c896'), borderRadius:3 }]},
+      options:baseOpts
+    });
+  }
+
+  const c3 = document.getElementById('chartAggex');
+  if(c3) {
+    const aggexVals = last.map(e=>e.aggex);
+    chartInstances['aggex'] = new Chart(c3, {
+      type:'bar',
+      data:{ labels, datasets:[{ label:'Agg GEX (B)', data:aggexVals, backgroundColor:aggexVals.map(v=>v!=null?(v<0?'rgba(224,85,85,0.7)':'rgba(0,200,150,0.7)'):'transparent'), borderRadius:3 }]},
+      options:baseOpts
+    });
+  }
+}
+
+// ---- CSV EXPORT ----
+function exportCSV() {
+  if(!entries.length) { alert('No entries to export.'); return; }
+  const headers = ['date','dow','regime','daytype','signal','flip','callwall','putwall','topstrike','netgex','aggex','calloi','putoi','callvol','putvol','vix','vvix','vratio','open','high','low','close','change','changePct','hitCallWall','hitPutWall','crossedFlip','aboveFlip','distCW','distPW','distFlip','range','notes'];
+  const rows = entries.map(e => headers.map(h => {
+    const v = e[h];
+    if(v===null||v===undefined) return '';
+    if(typeof v==='string' && (v.includes(',') || v.includes('"'))) return '"'+v.replace(/"/g,'""')+'"';
+    return v;
+  }).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], {type:'text/csv'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'spx_gex_journal_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ---- CSV IMPORT ----
+function importCSV(evt) {
+  const file = evt.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const lines = e.target.result.split('\n').filter(l=>l.trim());
+    if(lines.length < 2) { alert('CSV appears empty.'); return; }
+    const headers = lines[0].split(',').map(h=>h.trim());
+    const numFields = ['flip','callwall','putwall','topstrike','netgex','aggex','calloi','putoi','callvol','putvol','vix','vvix','vratio','open','high','low','close','change','changePct','distCW','distPW','distFlip','range'];
+    const boolFields = ['hitCallWall','hitPutWall','crossedFlip','aboveFlip'];
+    let imported = 0;
+    for(let i=1;i<lines.length;i++) {
+      const vals = parseCSVLine(lines[i]);
+      if(vals.length < 2) continue;
+      const obj = { id: Date.now()+i };
+      headers.forEach((h,idx) => {
+        const v = vals[idx]||'';
+        if(numFields.includes(h)) obj[h] = v===''?null:parseFloat(v);
+        else if(boolFields.includes(h)) obj[h] = v==='true';
+        else obj[h] = v;
+      });
+      if(obj.date && !entries.find(e=>e.date===obj.date)) {
+        entries.push(obj);
+        imported++;
+      }
+    }
+    entries.sort((a,b)=>b.date.localeCompare(a.date));
+    persist(); updateCount();
+    alert(`Imported ${imported} new entries.`);
+    evt.target.value='';
+  };
+  reader.readAsText(file);
+}
+
+function parseCSVLine(line) {
+  const result=[]; let cur='', inQ=false;
+  for(let i=0;i<line.length;i++) {
+    if(line[i]==='"') { if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ; }
+    else if(line[i]===','&&!inQ){result.push(cur);cur='';}
+    else cur+=line[i];
+  }
+  result.push(cur);
+  return result;
+}
+
+// ---- EDIT ----
+function eg(id) { return document.getElementById(id).value; }
+function egn(id) { const v=parseFloat(eg(id)); return isNaN(v)?null:v; }
+
+function openEdit(id) {
+  const e = entries.find(x=>x.id===id);
+  if(!e) return;
+  document.getElementById('e-id').value = id;
+  document.getElementById('editModalDate').textContent = e.date + ' ' + e.dow;
+  const set = (fid, val) => { const el=document.getElementById(fid); if(el) el.value = val??''; };
+  set('e-date', e.date); set('e-flip', e.flip); set('e-callwall', e.callwall); set('e-putwall', e.putwall);
+  set('e-topstrike', e.topstrike); set('e-netgex', e.netgex); set('e-aggex', e.aggex);
+  set('e-calloi', e.calloi); set('e-putoi', e.putoi); set('e-callvol', e.callvol); set('e-putvol', e.putvol);
+  set('e-vix', e.vix); set('e-vvix', e.vvix); set('e-vratio', e.vratio);
+  set('e-open', e.open); set('e-high', e.high); set('e-low', e.low); set('e-close', e.close);
+  set('e-notes', e.notes);
+  document.getElementById('e-regime').value = e.regime;
+  document.getElementById('e-daytype').value = e.daytype;
+  document.getElementById('e-signal').value = e.signal;
+  document.getElementById('editModal').classList.add('open');
+}
+
+function closeEdit() { document.getElementById('editModal').classList.remove('open'); }
+
+document.getElementById('editModal').addEventListener('click', function(ev) { if(ev.target===this) closeEdit(); });
+
+['e-vix','e-vvix'].forEach(id => document.getElementById(id).addEventListener('input', () => {
+  const vix=parseFloat(document.getElementById('e-vix').value);
+  const vvix=parseFloat(document.getElementById('e-vvix').value);
+  document.getElementById('e-vratio').value=(vix&&vvix&&vix>0)?(vvix/vix).toFixed(2):'';
+}));
+
+function saveEdit() {
+  const id=parseInt(document.getElementById('e-id').value);
+  const idx=entries.findIndex(x=>x.id===id);
+  if(idx===-1) return;
+  const date=eg('e-date'),flip=egn('e-flip'),callwall=egn('e-callwall'),putwall=egn('e-putwall');
+  const open=egn('e-open'),close=egn('e-close'),vix=egn('e-vix'),vvix=egn('e-vvix');
+  if(!date||!flip||!callwall||!putwall||!open||!close||!vix||!vvix){alert('Please fill all required fields (*)');return;}
+  const high=egn('e-high'),low=egn('e-low');
+  const dayNames=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  const dow=dayNames[new Date(date+'T12:00:00').getDay()];
+  const change=parseFloat((close-open).toFixed(2));
+  const changePct=parseFloat(((change/open)*100).toFixed(2));
+  const vratio=parseFloat((vvix/vix).toFixed(2));
+  entries[idx]={
+    ...entries[idx], date, dow,
+    regime:eg('e-regime'), daytype:eg('e-daytype'), signal:eg('e-signal'),
+    flip, callwall, putwall,
+    topstrike:egn('e-topstrike'), netgex:egn('e-netgex'), aggex:egn('e-aggex'),
+    calloi:egn('e-calloi'), putoi:egn('e-putoi'), callvol:egn('e-callvol'), putvol:egn('e-putvol'),
+    vix, vvix, vratio, open, high, low, close, change, changePct,
+    hitCallWall:!!(high&&high>=callwall), hitPutWall:!!(low&&low<=putwall),
+    crossedFlip:(open<flip&&close>flip)||(open>flip&&close<flip),
+    aboveFlip:close>flip,
+    distCW:parseFloat((callwall-close).toFixed(1)),
+    distPW:parseFloat((close-putwall).toFixed(1)),
+    distFlip:parseFloat((close-flip).toFixed(1)),
+    range:(high&&low)?parseFloat((high-low).toFixed(1)):null,
+    notes:eg('e-notes')
+  };
+  entries.sort((a,b)=>b.date.localeCompare(a.date));
+  persist(); closeEdit(); renderJournal();
+}
+
+updateCount();
+</script>
+</body>
+</html>
