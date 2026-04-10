@@ -369,6 +369,14 @@
             <option value="EXTREME_BEAR">Extreme Bear</option>
           </select>
         </div>
+        <div class="form-group"><label>GEX Behaved?</label>
+          <select id="f-gexbehaved">
+            <option value="YES">Yes — levels worked</option>
+            <option value="PARTIAL">Partial</option>
+            <option value="NO">No — levels ignored</option>
+            <option value="NA">N/A — unclear</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -503,6 +511,14 @@
             <option value="EXTREME_BEAR">Extreme Bear</option>
           </select>
         </div>
+        <div class="form-group"><label>GEX Behaved?</label>
+          <select id="e-gexbehaved">
+            <option value="YES">Yes — levels worked</option>
+            <option value="PARTIAL">Partial</option>
+            <option value="NO">No — levels ignored</option>
+            <option value="NA">N/A — unclear</option>
+          </select>
+        </div>
       </div>
     </div>
 
@@ -598,7 +614,7 @@ function gn(id) { const v = parseFloat(g(id)); return isNaN(v) ? null : v; }
 function clearForm() {
   ['f-flip','f-callwall','f-putwall','f-topstrike','f-netgex','f-aggex','f-calloi','f-putoi',
    'f-callvol','f-putvol','f-vix','f-vvix','f-vratio','f-open','f-high','f-low','f-close','f-notes'].forEach(id => document.getElementById(id).value = '');
-  ['f-regime','f-daytype','f-signal'].forEach(id => document.getElementById(id).selectedIndex = 0);
+  ['f-regime','f-daytype','f-signal','f-gexbehaved'].forEach(id => document.getElementById(id).selectedIndex = 0);
   document.getElementById('f-date').value = todayStr;
 }
 
@@ -618,6 +634,7 @@ function saveEntry() {
     regime: g('f-regime'),
     daytype: g('f-daytype'),
     signal: g('f-signal'),
+    gexbehaved: g('f-gexbehaved'),
     flip, callwall, putwall,
     topstrike: gn('f-topstrike'),
     netgex: gn('f-netgex'),
@@ -668,6 +685,13 @@ function dtBadge(t) {
   return `<span class="badge ${map[t]||'b-neutral'}" style="font-size:9px">${t.replace(/_/g,' ')}</span>`;
 }
 
+function gexBadge(g) {
+  if(g==='YES') return '<span class="badge b-pos">Yes</span>';
+  if(g==='NO') return '<span class="badge b-neg">No</span>';
+  if(g==='PARTIAL') return '<span class="badge b-warn">Partial</span>';
+  return '<span class="badge b-neutral">N/A</span>';
+}
+
 // ---- JOURNAL ----
 function renderJournal() {
   const el = document.getElementById('journalContent');
@@ -684,7 +708,7 @@ function renderJournal() {
       <th>Flip ×</th><th>Above Flip</th><th>Hit CW</th><th>Hit PW</th>
       <th>→CW</th><th>→PW</th><th>→Flip</th>
       <th>Range</th><th>Agg GEX</th><th>Net GEX</th>
-      <th>Call OI</th><th>Put OI</th><th>Signal</th><th>Type</th><th></th>
+      <th>Call OI</th><th>Put OI</th><th>GEX OK</th><th>Signal</th><th>Type</th><th></th>
     </tr></thead><tbody>`;
 
   data.forEach(e => {
@@ -714,6 +738,7 @@ function renderJournal() {
       <td style="font-family:var(--font-mono)">${e.netgex!=null?e.netgex+'B':'—'}</td>
       <td style="font-family:var(--font-mono)">${e.calloi!=null?e.calloi+'K':'—'}</td>
       <td style="font-family:var(--font-mono)">${e.putoi!=null?e.putoi+'K':'—'}</td>
+      <td>${gexBadge(e.gexbehaved)}</td>
       <td>${sBadge(e.signal)}</td>
       <td>${dtBadge(e.daytype)}</td>
       <td style="display:flex;gap:6px">
@@ -721,7 +746,7 @@ function renderJournal() {
         <button class="btn btn-sm btn-danger" onclick="delEntry(${e.id})">×</button>
       </td>
     </tr>`;
-    if(e.notes) html += `<tr class="notes-row"><td colspan="28" style="padding:4px 10px 8px;color:var(--text3);font-style:italic;font-size:11px;font-family:var(--font-sans)">↳ ${e.notes}</td></tr>`;
+    if(e.notes) html += `<tr class="notes-row"><td colspan="29" style="padding:4px 10px 8px;color:var(--text3);font-style:italic;font-size:11px;font-family:var(--font-sans)">↳ ${e.notes}</td></tr>`;
   });
   html += '</tbody></table></div>';
   el.innerHTML = html;
@@ -748,6 +773,10 @@ function renderAnalytics() {
   const hitPW = entries.filter(e=>e.hitPutWall).length;
   const crossF = entries.filter(e=>e.crossedFlip).length;
   const upDays = entries.filter(e=>e.changePct>0).length;
+  const gexYes = entries.filter(e=>e.gexbehaved==='YES').length;
+  const gexNo = entries.filter(e=>e.gexbehaved==='NO').length;
+  const gexPartial = entries.filter(e=>e.gexbehaved==='PARTIAL').length;
+  const gexRated = entries.filter(e=>e.gexbehaved&&e.gexbehaved!=='NA').length;
   const avgVR = (entries.filter(e=>e.vratio).reduce((s,e)=>s+e.vratio,0)/entries.filter(e=>e.vratio).length).toFixed(2);
   const avgVix = (entries.reduce((s,e)=>s+e.vix,0)/n).toFixed(1);
   const avgChg = (entries.reduce((s,e)=>s+e.changePct,0)/n).toFixed(2);
@@ -790,6 +819,8 @@ function renderAnalytics() {
     <div class="metric"><div class="metric-label">Avg VIX</div><div class="metric-value">${avgVix}</div></div>
     <div class="metric"><div class="metric-label">Avg V-Ratio</div><div class="metric-value">${avgVR}</div></div>
     <div class="metric"><div class="metric-label">Flip crosses</div><div class="metric-value">${crossF}</div><div class="metric-sub">${((crossF/n)*100).toFixed(0)}% of days</div></div>
+    <div class="metric"><div class="metric-label">GEX behaved</div><div class="metric-value">${gexYes}</div><div class="metric-sub">${gexRated>0?((gexYes/gexRated)*100).toFixed(0):0}% of rated days</div></div>
+    <div class="metric"><div class="metric-label">GEX ignored</div><div class="metric-value">${gexNo}</div><div class="metric-sub">${gexPartial} partial</div></div>
   </div>
 
   <div class="g2">
@@ -950,7 +981,7 @@ function buildCharts() {
 // ---- CSV EXPORT ----
 function exportCSV() {
   if(!entries.length) { alert('No entries to export.'); return; }
-  const headers = ['date','dow','regime','daytype','signal','flip','callwall','putwall','topstrike','netgex','aggex','calloi','putoi','callvol','putvol','vix','vvix','vratio','open','high','low','close','change','changePct','hitCallWall','hitPutWall','crossedFlip','aboveFlip','distCW','distPW','distFlip','range','notes'];
+  const headers = ['date','dow','regime','gexbehaved','daytype','signal','flip','callwall','putwall','topstrike','netgex','aggex','calloi','putoi','callvol','putvol','vix','vvix','vratio','open','high','low','close','change','changePct','hitCallWall','hitPutWall','crossedFlip','aboveFlip','distCW','distPW','distFlip','range','notes'];
   const rows = entries.map(e => headers.map(h => {
     const v = e[h];
     if(v===null||v===undefined) return '';
@@ -1032,6 +1063,7 @@ function openEdit(id) {
   document.getElementById('e-regime').value = e.regime;
   document.getElementById('e-daytype').value = e.daytype;
   document.getElementById('e-signal').value = e.signal;
+  document.getElementById('e-gexbehaved').value = e.gexbehaved||'NA';
   document.getElementById('editModal').classList.add('open');
 }
 
@@ -1060,7 +1092,7 @@ function saveEdit() {
   const vratio=parseFloat((vvix/vix).toFixed(2));
   entries[idx]={
     ...entries[idx], date, dow,
-    regime:eg('e-regime'), daytype:eg('e-daytype'), signal:eg('e-signal'),
+    regime:eg('e-regime'), daytype:eg('e-daytype'), signal:eg('e-signal'), gexbehaved:eg('e-gexbehaved'),
     flip, callwall, putwall,
     topstrike:egn('e-topstrike'), netgex:egn('e-netgex'), aggex:egn('e-aggex'),
     calloi:egn('e-calloi'), putoi:egn('e-putoi'), callvol:egn('e-callvol'), putvol:egn('e-putvol'),
